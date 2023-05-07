@@ -7,6 +7,7 @@ public class DeliveryManager : MonoBehaviour
 {
     public event EventHandler OnRecipeSpawned;
     public event EventHandler OnRecipeCompleted;
+    public event EventHandler OnRecipeFailed;
 
     public static DeliveryManager Instance { get; private set; }
 
@@ -25,11 +26,13 @@ public class DeliveryManager : MonoBehaviour
 
     private void Update()
     {
+        //Check if the maximum amount of orders have been created, if so stop spawning
         if (waitingRecipeSOList.Count >= waitingRecipesMax)
         {
             return;
         }
 
+        //Count down spawn timer and then check if it is time to spawn the next order
         spawnRecipeTimerMax -= Time.deltaTime;
         if (spawnRecipeTimerMax <= 0)
         {
@@ -43,6 +46,7 @@ public class DeliveryManager : MonoBehaviour
 
     public void DeliverRecipe(PlateKitchenObject plateKitchenObject)
     {
+        //Loop through each recipe current ordered
         for(int i = 0; i < waitingRecipeSOList.Count; i++)
         {
             RecipeSO waitingRecipeSO = waitingRecipeSOList[i];
@@ -55,28 +59,35 @@ public class DeliveryManager : MonoBehaviour
 
             bool plateContentsMatchRecipe = true;
 
+            //Loop through each ingredient in the order and compare it to each ingredient on the plate
             foreach(KitchenObjectSO recipeKitchenObjectSO in waitingRecipeSO.kitchenObjectSOList)
             {
+                //Loop through each item on the plate and see if it
                 bool ingredientFound = false;
                 foreach(KitchenObjectSO plateKitchenObjectSO in plateKitchenObject.GetKitchenObjectSOOnPlateList())
                 {
+                    //Matching ingredient found on plate
                     if (plateKitchenObjectSO == recipeKitchenObjectSO)
                     {
+                        //If match found no need to keep searching
                         ingredientFound = true;
                         break;
                     }
                 }
 
-                if(!ingredientFound)
+                //Matching ingredient not found on plate
+                if (!ingredientFound)
                 {
+                    //If match not found no need to check remaining ingredients
                     plateContentsMatchRecipe = false;
                     break;
                 }
             }
 
+            //Player delivered the correct recipe
             if (plateContentsMatchRecipe)
             {
-                Debug.Log("Player delivered the correct recipe");
+                
                 waitingRecipeSOList.RemoveAt(i);
 
                 OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
@@ -84,12 +95,13 @@ public class DeliveryManager : MonoBehaviour
                 return;
             }
         }
-
-        Debug.Log("Player delivered the wrong recipe");
+        //Player delivered the wrong recipe
+        OnRecipeFailed?.Invoke(this, EventArgs.Empty);
     }
 
+    //Return a list of every ordered recipe
     public List<RecipeSO> GetWaitingRecipeSOList()
-    {
+    {    
         return waitingRecipeSOList;
     }
 }

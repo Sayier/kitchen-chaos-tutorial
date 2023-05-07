@@ -7,6 +7,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 {
     public static Player Instance { get; private set; }
 
+    public event EventHandler OnItemPickUp;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs
     {
@@ -30,7 +31,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     {
         if (Instance != null)
         {
-            Debug.LogError("Instance has already been set.");
+            Debug.LogError("Instance has already been created.");
         }
         Instance = this;
     }
@@ -65,35 +66,41 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     private void HandleInteractions()
     {
+        //Check if there is something within interact distance of the player
         if(Physics.Raycast(transform.position, transform.forward, out RaycastHit raycastHit, interactDistance, countersLayerMask))
         {
+            //Check if object is a counter and try to return which counter it is
             if(raycastHit.transform.TryGetComponent(out BaseCounter baseCounter))
             {
                 if(baseCounter != selectedCounter)
                 {
+                    //If not already selected store a reference to interactable counter
                     SetSelectedCounter(baseCounter);
                 }
             }
             else
             {
+                //Object is not a counter, make sure there is no longer a selected counter
                 SetSelectedCounter(null);
             }
         }
         else
         {
+            //There is nothing in front of player, make sure there is no longer a selected counter
             SetSelectedCounter(null);
         }
     }
 
     private void SetSelectedCounter(BaseCounter newSelectedCounter)
     {
-        //If selected counter was null and is still null do not fire event
-        if(this.selectedCounter == null && newSelectedCounter == null)
+        //If there was no selected counter and there is still no selected counter skip attempting to update
+        if(selectedCounter == null && newSelectedCounter == null)
         {
             return;
         }
         
-        this.selectedCounter = newSelectedCounter;
+        //Store reference of new selected counter and fire event to update visuals
+        selectedCounter = newSelectedCounter;
 
         OnSelectedCounterChanged?.Invoke(this, new OnSelectedCounterChangedEventArgs
         {
@@ -103,12 +110,15 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     private void HandleMovement()
     {
+        //Pull movement direction from input and calculate how far the player has moved this tick
         Vector3 moveDirection = ConvertInputToNormalizedVector3();
         float moveDistance = moveSpeed * Time.deltaTime;
 
+        //Raycast to check if something is blocking the player
         bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirection, moveDistance);
         if (!canMove)
         {
+
             Vector3 moveDirectionX = new Vector3(moveDirection.x, 0, 0).normalized;
             canMove = (moveDirection.x != 0) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionX, moveDistance);
 
@@ -140,6 +150,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         }
     }
 
+    //Return movement direction as a normalized Vector3
     private Vector3 ConvertInputToNormalizedVector3()
     {
         Vector2 inputVectorNormalized = gameInput.GetMovementVectorNormalized();
@@ -148,33 +159,44 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         return moveDirection;
     }
 
+    //Returns if player is walking
     public bool IsWalking()
     {
         return isWalking;
     }
 
+    //Returns the transform where the player holds an object
     public Transform GetKitchenObjectFollowTransform()
     {
         return kitchenObjectHoldPoint;
     }
 
+    //Returns the kitchen object the player is holding
     public KitchenObject GetKitchenObject()
     {
-        return this.kitchenObject;
+        return kitchenObject;
     }
 
+    //Put kitchen object in player's hands and inform Sound system
     public void SetKitchenObject(KitchenObject newKitchenObject)
     {
         this.kitchenObject = newKitchenObject;
+
+        if(kitchenObject != null)
+        {
+            OnItemPickUp?.Invoke(this, EventArgs.Empty);
+        }
     }
 
+    //Remove kitchen object from player
     public void ClearKitchenObject()
     {
-        this.kitchenObject = null;
+        kitchenObject = null;
     }
 
+    //Return if player is holding a kitchen object
     public bool HasKitchenObject()
     {
-        return this.kitchenObject != null;
+        return kitchenObject != null;
     }
 }
