@@ -31,7 +31,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     {
         if (Instance != null)
         {
-            Debug.LogError("Instance has already been created.");
+            Debug.LogError("Player instance has already been created.");
         }
         Instance = this;
     }
