@@ -48,16 +48,30 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         HandleInteractions();
     }
 
+    //Listen for Alt. Interact input
     private void GameInput_OnInteractAlternateAction(object sender, EventArgs e)
     {
+        //If game is not currently in playing state do not listen for player input
+        if (!GameManager.Instance.IsGamePlaying())
+        {
+            return;
+        }
+
         if (selectedCounter != null)
         {
             selectedCounter.InteractAlternate(this);
         }
     }
 
+    //Listen for Interact input
     private void GameInput_OnInteractAction(object sender, EventArgs e)
     {
+        //If game is not currently in playing state do not listen for player input
+        if (!GameManager.Instance.IsGamePlaying())
+        {
+            return;
+        }
+
         if (selectedCounter != null)
         {
             selectedCounter.Interact(this);
