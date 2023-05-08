@@ -6,11 +6,11 @@ public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance { get; private set; }
 
-    private const string PlayerPrefsSoundEffectsVolume = "SoundEffectsVolume";
-
     [SerializeField] private AudioClipReferencesSO audioClipReferencesSO;
     [SerializeField] private Transform deliveryCounterSoundSource;
-    
+
+    private const string PlayerPrefsSoundEffectsVolume = "SoundEffectsVolume";
+
     private float volume = 1f;
 
     private void Awake()
