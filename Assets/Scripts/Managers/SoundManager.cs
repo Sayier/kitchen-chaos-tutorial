@@ -6,8 +6,12 @@ public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance { get; private set; }
 
+    private const string PlayerPrefsSoundEffectsVolume = "SoundEffectsVolume";
+
     [SerializeField] private AudioClipReferencesSO audioClipReferencesSO;
     [SerializeField] private Transform deliveryCounterSoundSource;
+    
+    private float volume = 1f;
 
     private void Awake()
     {
@@ -16,6 +20,8 @@ public class SoundManager : MonoBehaviour
             Debug.LogError("Sound Manager instance has already been created.");
         }
         Instance = this;
+
+        volume = PlayerPrefs.GetFloat(PlayerPrefsSoundEffectsVolume, 1f);
     }
 
     private void Start()
@@ -67,13 +73,31 @@ public class SoundManager : MonoBehaviour
         PlaySound(audioClipArray[Random.Range(0, audioClipArray.Length)], position, volume);
     }
 
-    private void PlaySound(AudioClip audioClip, Vector3 position, float volume = 1f)
+    private void PlaySound(AudioClip audioClip, Vector3 position, float volumeMultiplier = 1f)
     {
-        AudioSource.PlayClipAtPoint(audioClip, position, volume);
+        AudioSource.PlayClipAtPoint(audioClip, position, volume * volumeMultiplier);
     }
 
     public void PlayFootstepsSound(Vector3 position, float volume = 1f)
     {
         PlaySound(audioClipReferencesSO.footsteps, position, volume);
+    }
+
+    //Increase volume by 10%, reset to 0 if over 100%
+    public void ChangeVolume()
+    {
+        volume += .1f;
+        if(volume > 1f)
+        {
+            volume = 0f;
+        }
+
+        PlayerPrefs.SetFloat(PlayerPrefsSoundEffectsVolume, volume);
+        PlayerPrefs.Save();
+    }
+
+    public float GetVolume()
+    {
+        return volume;
     }
 }
