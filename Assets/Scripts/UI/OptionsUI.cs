@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -16,22 +17,30 @@ public class OptionsUI : MonoBehaviour
     [SerializeField] private Button moveDownButton;
     [SerializeField] private Button moveLeftButton;
     [SerializeField] private Button moveRightButton;
-    [SerializeField] private Button interactButton;
-    [SerializeField] private Button interactAlternateButton;
-    [SerializeField] private Button pauseButton;
+    [SerializeField] private Button keyboardInteractButton;
+    [SerializeField] private Button keyboardInteractAlternateButton;
+    [SerializeField] private Button keyboardPauseButton;
+    [SerializeField] private Button gamepadInteractButton;
+    [SerializeField] private Button gamepadInteractAlternateButton;
+    [SerializeField] private Button gamepadPauseButton;
 
     [SerializeField] private Transform PressToRebindKeyTransform;
+
+    private TextMeshProUGUI soundEffectsText;
+    private TextMeshProUGUI musicText;
 
     private TextMeshProUGUI moveUpButtonText;
     private TextMeshProUGUI moveDownButtonText;
     private TextMeshProUGUI moveLeftButtonText;
     private TextMeshProUGUI moveRightButtonText;
-    private TextMeshProUGUI interactButtonText;
-    private TextMeshProUGUI interactAlternateButtonText;
-    private TextMeshProUGUI pauseButtonText;
+    private TextMeshProUGUI keyboardInteractButtonText;
+    private TextMeshProUGUI keyboardInteractAlternateButtonText;
+    private TextMeshProUGUI keyboardPauseButtonText;
+    private TextMeshProUGUI gamepadInteractButtonText;
+    private TextMeshProUGUI gamepadInteractAlternateButtonText;
+    private TextMeshProUGUI gamepadPauseButtonText;
 
-    private TextMeshProUGUI soundEffectsText;
-    private TextMeshProUGUI musicText;
+    private Action onCloseButtonAction;
 
     private void Awake()
     {
@@ -48,9 +57,12 @@ public class OptionsUI : MonoBehaviour
         moveDownButtonText = moveDownButton.GetComponentInChildren<TextMeshProUGUI>();
         moveLeftButtonText = moveLeftButton.GetComponentInChildren<TextMeshProUGUI>();
         moveRightButtonText = moveRightButton.GetComponentInChildren<TextMeshProUGUI>();
-        interactButtonText = interactButton.GetComponentInChildren<TextMeshProUGUI>();
-        interactAlternateButtonText = interactAlternateButton.GetComponentInChildren<TextMeshProUGUI>();
-        pauseButtonText = pauseButton.GetComponentInChildren<TextMeshProUGUI>();
+        keyboardInteractButtonText = keyboardInteractButton.GetComponentInChildren<TextMeshProUGUI>();
+        keyboardInteractAlternateButtonText = keyboardInteractAlternateButton.GetComponentInChildren<TextMeshProUGUI>();
+        keyboardPauseButtonText = keyboardPauseButton.GetComponentInChildren<TextMeshProUGUI>();
+        gamepadInteractButtonText = gamepadInteractButton.GetComponentInChildren<TextMeshProUGUI>();
+        gamepadInteractAlternateButtonText = gamepadInteractAlternateButton.GetComponentInChildren<TextMeshProUGUI>();
+        gamepadPauseButtonText = gamepadPauseButton.GetComponentInChildren<TextMeshProUGUI>();
 
         soundEffectsButton.onClick.AddListener(() =>
         {
@@ -65,44 +77,21 @@ public class OptionsUI : MonoBehaviour
         });
 
         backButton.onClick.AddListener(() => 
-        {
+        { 
             Hide();
+            onCloseButtonAction();
         });
 
-        moveUpButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.MoveUp);
-        });
-
-        moveDownButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.MoveDown);
-        });
-
-        moveLeftButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.MoveLeft);
-        });
-
-        moveRightButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.MoveRight);
-        });
-
-        interactButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.Interact);
-        });
-
-        interactAlternateButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.InteractAlternate);
-        });
-
-        pauseButton.onClick.AddListener(() => 
-        {
-            RebindBinding(GameInput.Binding.Pause);
-        });
+        moveUpButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.MoveUp); });
+        moveDownButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.MoveDown); });
+        moveLeftButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.MoveLeft); });
+        moveRightButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.MoveRight); });
+        keyboardInteractButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Keyboard_Interact); });
+        keyboardInteractAlternateButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Keyboard_InteractAlternate); });
+        keyboardPauseButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Keyboard_Pause); });
+        gamepadInteractButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_Interact); });
+        gamepadInteractAlternateButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_InteractAlternate); });
+        gamepadPauseButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_Pause); });
     }
 
     private void Start()
@@ -125,9 +114,14 @@ public class OptionsUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    public void Show()
+    public void Show(Action onCloseButtonAction)
     {
+        this.onCloseButtonAction = onCloseButtonAction;
+
         gameObject.SetActive(true);
+
+        //Default the selected button to resume on pause
+        soundEffectsButton.Select();
     }
 
     //Update the visual for all the options to reflect current settings
@@ -140,9 +134,12 @@ public class OptionsUI : MonoBehaviour
         moveDownButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.MoveDown);
         moveLeftButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.MoveLeft);
         moveRightButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.MoveRight);
-        interactButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Interact);
-        interactAlternateButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.InteractAlternate);
-        pauseButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Pause);
+        keyboardInteractButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Keyboard_Interact);
+        keyboardInteractAlternateButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Keyboard_InteractAlternate);
+        keyboardPauseButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Keyboard_Pause);
+        gamepadInteractButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_Interact);
+        gamepadInteractAlternateButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_InteractAlternate);
+        gamepadPauseButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.Gamepad_Pause);
     }
 
     private void HidePressToRebindKey()

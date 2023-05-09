@@ -20,9 +20,13 @@ public class GameInput : MonoBehaviour
         MoveDown,
         MoveLeft,
         MoveRight,
-        Interact,
-        InteractAlternate,
-        Pause
+        Keyboard_Interact,
+        Keyboard_InteractAlternate,
+        Keyboard_Pause,
+        Gamepad_Interact,
+        Gamepad_InteractAlternate,
+        Gamepad_Pause
+
     }
 
     private PlayerInputActions playerInputActions;    
@@ -85,6 +89,7 @@ public class GameInput : MonoBehaviour
         return inputVector;
     }
 
+    //For a given key binding return a string that can be used to represent the key
     public string GetBindingText(Binding binding)
     {
         string bindingText = "";
@@ -103,22 +108,33 @@ public class GameInput : MonoBehaviour
             case Binding.MoveRight:
                 bindingText = playerInputActions.Player.Move.bindings[4].ToDisplayString();
                 break;
-            case Binding.Interact:
+            case Binding.Keyboard_Interact:
                 bindingText = playerInputActions.Player.Interact.bindings[0].ToDisplayString();
                 break;
-            case Binding.InteractAlternate:
+            case Binding.Keyboard_InteractAlternate:
                 bindingText = playerInputActions.Player.InteractAlternate.bindings[0].ToDisplayString();
                 break;
-            case Binding.Pause:
+            case Binding.Keyboard_Pause:
                 bindingText = playerInputActions.Player.Pause.bindings[0].ToDisplayString();
+                break;
+            case Binding.Gamepad_Interact:
+                bindingText = playerInputActions.Player.Interact.bindings[1].ToDisplayString();
+                break;
+            case Binding.Gamepad_InteractAlternate:
+                bindingText = playerInputActions.Player.InteractAlternate.bindings[1].ToDisplayString();
+                break;
+            case Binding.Gamepad_Pause:
+                bindingText = playerInputActions.Player.Pause.bindings[1].ToDisplayString();
                 break;
         }
 
         return bindingText;
     }
 
+    //For a given binding, set a new key and then save that key to Player Prefs
     public void SetKeyBinding(Binding binding, Action onActionRebound)
     {
+        //Need to disable all input while keybinding is happening
         playerInputActions.Player.Disable();
 
         InputAction inputAction;
@@ -142,17 +158,29 @@ public class GameInput : MonoBehaviour
                 inputAction = playerInputActions.Player.Move;
                 bindingIndex = 4;
                 break;
-            case Binding.Interact:
+            case Binding.Keyboard_Interact:
                 inputAction = playerInputActions.Player.Interact;
                 bindingIndex = 0;
                 break;
-            case Binding.InteractAlternate:
+            case Binding.Keyboard_InteractAlternate:
                 inputAction = playerInputActions.Player.InteractAlternate;
                 bindingIndex = 0;
                 break;
-            case Binding.Pause:
+            case Binding.Keyboard_Pause:
                 inputAction = playerInputActions.Player.Pause;
                 bindingIndex = 0;
+                break;
+            case Binding.Gamepad_Interact:
+                inputAction = playerInputActions.Player.Interact;
+                bindingIndex = 1;
+                break;
+            case Binding.Gamepad_InteractAlternate:
+                inputAction = playerInputActions.Player.InteractAlternate;
+                bindingIndex = 1;
+                break;
+            case Binding.Gamepad_Pause:
+                inputAction = playerInputActions.Player.Pause;
+                bindingIndex = 1;
                 break;
             default:
                 Debug.LogError("Invalid key binding attempting to be set");
@@ -161,6 +189,8 @@ public class GameInput : MonoBehaviour
                 break;
         }
 
+        //Perform the rebinding using the inputs looked up above, once complete remove the rebinding callback, re-enable
+        //the controls, save to Player Prefs, and fire off whatever Actions need to happen
         inputAction.PerformInteractiveRebinding(bindingIndex)
             .OnComplete(callback =>
             {

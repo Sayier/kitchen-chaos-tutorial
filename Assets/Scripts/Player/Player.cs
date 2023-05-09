@@ -57,6 +57,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
             return;
         }
 
+        //If a counter is selected allow an alternate interaction on button press
         if (selectedCounter != null)
         {
             selectedCounter.InteractAlternate(this);
@@ -72,6 +73,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
             return;
         }
 
+        //If there is a counter selected allow an interaction on button press
         if (selectedCounter != null)
         {
             selectedCounter.Interact(this);
@@ -132,36 +134,60 @@ public class Player : MonoBehaviour, IKitchenObjectParent
         bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirection, moveDistance);
         if (!canMove)
         {
-
+            //If something is blocking, check if player can still move in the X direction of their movement
             Vector3 moveDirectionX = new Vector3(moveDirection.x, 0, 0).normalized;
-            canMove = (moveDirection.x != 0) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionX, moveDistance);
+            canMove = IsMovingOnXAxis(moveDirection) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionX, moveDistance);
 
             if (canMove)
             {
+                //Player is not blocked in the X direction so set a new movement vector to allow that X movement
                 moveDirection = moveDirectionX;
             }
             else
             {
+                //Player is blocked forward and is blocked in X, check if player can move in the Z direction
                 Vector3 moveDirectionZ = new Vector3(0, 0, moveDirection.z).normalized;
-                canMove = (moveDirection.z != 0) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionZ, moveDistance);
+                canMove = IsMovingOnZAxis(moveDirection) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionZ, moveDistance);
 
                 if (canMove)
                 {
+                    //Player is not blocked in the Z direction so set a new movement vector to allow that Z movement
                     moveDirection = moveDirectionZ;
                 }
             }
         }
         if (canMove)
         {
+            //Move the player based on what ever movement direction was found above
             transform.position += moveDirection * moveDistance;
         }
 
+        //Check if is walking, walking into an obstacle counts here
         isWalking = moveDirection != Vector3.zero ? true : false;
 
         if (moveDirection != Vector3.zero)
         {
+            //Smoothly rotate the player to face the direction of movement
             transform.forward = Vector3.Slerp(transform.forward, moveDirection, Time.deltaTime * rotationSpeed);
         }
+    }
+
+    //Checks for a Z movement component in the movement vector, accounts for deadzone on controllers
+    private static bool IsMovingOnZAxis(Vector3 moveDirection)
+    {
+        float downMovementDeadzone = -.5f;
+        float upMovementDeadzone = .5f;
+
+        return moveDirection.z <= downMovementDeadzone || moveDirection.z >= upMovementDeadzone;
+    }
+
+    //Checks for a X movement component in the movement vector, accounts for deadzone on controllers
+    private static bool IsMovingOnXAxis(Vector3 moveDirection)
+    {
+        float leftMovementDeadzone = -.5f;
+        float rightMovementDeadzone = .5f;
+
+        return moveDirection.x <= leftMovementDeadzone || moveDirection.x >= rightMovementDeadzone;
     }
 
     //Return movement direction as a normalized Vector3

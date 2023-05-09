@@ -24,4 +24,9 @@ public class MainMenuUI : MonoBehaviour
         //Resets time scale in case main menu is loaded from the game scene's pause screen
         Time.timeScale = 1f;
     }
+
+    private void Start()
+    {
+        playButton.Select();
+    }
 }
