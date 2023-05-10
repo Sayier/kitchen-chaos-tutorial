@@ -17,6 +17,13 @@ public class PlatesCounter : BaseCounter
 
     private void Update()
     {
+        //If the game is not in the Game Playing state then plates should not be spawning
+        if (!GameManager.Instance.IsGamePlaying())
+        {
+            return;
+        }
+
+        //Create a new plate once the spawnPlateTimer has elapsed
         spawnPlateTimer += Time.deltaTime;
         if(spawnPlateTimer > spawnPlateTimerMax)
         {
@@ -33,6 +40,7 @@ public class PlatesCounter : BaseCounter
 
     public override void Interact(Player player)
     {
+        //If the player is not holding anything and there are plates on the counter then move one to the player's hands
         if (!player.HasKitchenObject() && plateSpawnAmount > 0)
         {
             KitchenObject.SpawnKitchenObject(kitchenObjectSO, player);

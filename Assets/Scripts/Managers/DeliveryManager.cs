@@ -27,6 +27,12 @@ public class DeliveryManager : MonoBehaviour
 
     private void Update()
     {
+        //If the game is not in the Game Playing state then orders should not be generating
+        if (!GameManager.Instance.IsGamePlaying())
+        {
+            return;
+        }
+
         //Check if the maximum amount of orders have been created, if so stop spawning
         if (waitingRecipeSOList.Count >= waitingRecipesMax)
         {
