@@ -20,9 +20,6 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
 
-    private float playerHeight = 2f;
-    private float playerRadius = .65f;
-    private float interactDistance = 2f;
     private bool isWalking = false;
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
@@ -82,6 +79,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     private void HandleInteractions()
     {
+        float interactDistance = 2f;
+
         //Check if there is something within interact distance of the player
         if(Physics.Raycast(transform.position, transform.forward, out RaycastHit raycastHit, interactDistance, countersLayerMask))
         {
@@ -126,6 +125,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     private void HandleMovement()
     {
+        float playerHeight = 2f;
+        float playerRadius = .65f;
+
         //Pull movement direction from input and calculate how far the player has moved this tick
         Vector3 moveDirection = ConvertInputToNormalizedVector3();
         float moveDistance = moveSpeed * Time.deltaTime;
