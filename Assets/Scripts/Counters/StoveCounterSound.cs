@@ -6,6 +6,8 @@ public class StoveCounterSound : MonoBehaviour
 {
     private AudioSource audioSource;
     private StoveCounter stoveCounter;
+    private float warningSoundTimer;
+    private bool playWarningSound;
 
     private void Awake()
     {
@@ -16,10 +18,37 @@ public class StoveCounterSound : MonoBehaviour
     private void Start()
     {
         stoveCounter.OnStateChanged += StoveCounter_OnStateChanged;
+        stoveCounter.OnProgressChanged += StoveCounter_OnProgressChanged;
+    }
+
+    private void Update()
+    {
+        //Only show the burning warning sound if the object is already fried and the burn timer is nearing completion
+        if (!playWarningSound)
+        {
+            return;
+        }
+
+        warningSoundTimer -= Time.deltaTime;
+        if(warningSoundTimer <= 0f)
+        {
+            float warningSoundTimerMax = .2f;
+            warningSoundTimer = warningSoundTimerMax;
+
+            SoundManager.Instance.PlayWarningSound(stoveCounter.transform.position);
+        }
+    }
+
+    private void StoveCounter_OnProgressChanged(object sender, IHasProgress.OnProgressChangedEventArgs e)
+    {
+        //Check if the object is close to burning
+        float burnShowProgressAmount = .5f;
+        playWarningSound = stoveCounter.IsFried() && (e.progressNormalized >= burnShowProgressAmount);
     }
 
     private void StoveCounter_OnStateChanged(object sender, StoveCounter.OnStateChangedEventArgs e)
     {
+        //Only play the cooking sound if the object is either frying or is fried
         bool playSound = e.cookingState == StoveCounter.State.Frying || e.cookingState == StoveCounter.State.Fried;
 
         if (playSound)

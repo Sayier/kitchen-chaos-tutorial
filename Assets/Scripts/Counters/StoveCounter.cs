@@ -37,6 +37,7 @@ public class StoveCounter : BaseCounter, IHasProgress
 
     private void Update()
     {
+        //Check if the is a Kitchen Object on the Stove
         if (HasKitchenObject())
         {
             switch (state)
@@ -44,6 +45,7 @@ public class StoveCounter : BaseCounter, IHasProgress
                 case State.Idle:
                     break;
                 case State.Frying:
+                    //Frying timer is initialized when object is placed on Stove, update Events each tick
                     fryingTimer += Time.deltaTime;
 
                     OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
@@ -53,10 +55,13 @@ public class StoveCounter : BaseCounter, IHasProgress
 
                     if (fryingTimer >= fryingRecipeSO.fryingTimerMax)
                     {
+                        //Once the timer has reached the cooking time defined in the FryingRecipeSO destroy what is on stove
+                        //and replace it with the output defined in the FryingRecipeSO
                         GetKitchenObject().DestroySelf();
 
                         KitchenObject.SpawnKitchenObject(fryingRecipeSO.output, this);
 
+                        //Grab the BurningRecipeSO for the object, advance the Stove state, and notify Events
                         burningRecipeSO = GetBurningRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
                         burningTimer = 0f;
                         state = State.Fried;
@@ -73,6 +78,7 @@ public class StoveCounter : BaseCounter, IHasProgress
                     }
                     break;
                 case State.Fried:
+                    //Burning timer was initialized at the end of the previous state, update events each tick
                     burningTimer += Time.deltaTime;
 
                     OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
@@ -82,10 +88,14 @@ public class StoveCounter : BaseCounter, IHasProgress
 
                     if (burningTimer >= burningRecipeSO.burnigTimerMax)
                     {
+                        //Once the timer has reached the burn time defined in the BurningRecipeSO destroy what is on stove
+                        //and replace it with the output defined in the BurningRecipeSO
                         GetKitchenObject().DestroySelf();
 
                         KitchenObject.SpawnKitchenObject(burningRecipeSO.output, this);
 
+                        //Update Stove state and in the OnProgressChanged event reset the progressNormalized now that
+                        //the timers are complete
                         state = State.Burned;
 
                         OnStateChanged?.Invoke(this, new OnStateChangedEventArgs()
@@ -107,14 +117,15 @@ public class StoveCounter : BaseCounter, IHasProgress
 
     public override void Interact(Player player)
     {
+        //Player is holding something and it is fryable and Stove is empty
         if (player.HasKitchenObject() && HasRecipeForInput(player.GetKitchenObject().GetKitchenObjectSO()) && !HasKitchenObject())
         {
-            //Player is holding something and it is fryable and counter is empty
-
+            //Place the object on the Stove and retrieve the associated FryingRecipeSO
             player.GetKitchenObject().SetKitchenObjectParent(this);
 
             fryingRecipeSO = GetFryingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
 
+            //Initialize the cooking timer, update the Stove state machine, and trigger relevant events
             fryingTimer = 0f;
             state = State.Frying;
 
@@ -128,13 +139,14 @@ public class StoveCounter : BaseCounter, IHasProgress
                 progressNormalized = fryingTimer / fryingRecipeSO.fryingTimerMax
             });
         }
+        //Player is not holding anything and Stove is occupied
         else if (!player.HasKitchenObject() && this.HasKitchenObject())
         {
-            //Player is not holding anything and counter is occupied
-
+            //Transfer object from Stove to Player and null out the FryingRecipeSO
             this.GetKitchenObject().SetKitchenObjectParent(player);
             fryingRecipeSO = null;
 
+            //Update Stove state and trigger relevant events
             state = State.Idle;
 
             OnStateChanged?.Invoke(this, new OnStateChangedEventArgs()
@@ -147,13 +159,15 @@ public class StoveCounter : BaseCounter, IHasProgress
                 progressNormalized = 0f
             });
         }
+        //Player is holding a plate and counter has a Kitchen Object on it
         else if (player.HasKitchenObject() && player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject) && HasKitchenObject())
         {
-            //Player is holding a plate and counter is occupied
-
+            //Check if the object on the Stove can be placed on a Plate
             bool hasAddedKitchenObjectToPlate = plateKitchenObject.TryAddIngrediant(GetKitchenObject().GetKitchenObjectSO());
             if (hasAddedKitchenObjectToPlate)
             {
+                //KitchenObject can be added to plate, at this point it has already been added to the plate by the TryAddIngrediant call
+                //so we just need to destroy the version of the object on the Stove, set Stove state to Idle, and update events
                 GetKitchenObject().DestroySelf();
 
                 state = State.Idle;
@@ -203,6 +217,7 @@ public class StoveCounter : BaseCounter, IHasProgress
         return null;
     }
 
+    //Return what the BurningRecipeSO based on a provided input KitchenObjectSO
     private BurningRecipeSO GetBurningRecipeSOWithInput(KitchenObjectSO inputKitchenObjectSO)
     {
         foreach (BurningRecipeSO burningRecipeSO in burningRecipeSOArray)
@@ -214,5 +229,11 @@ public class StoveCounter : BaseCounter, IHasProgress
         }
 
         return null;
+    }
+
+    //Check is the object on the stove is currently in a Fried state
+    public bool IsFried()
+    {
+        return state == State.Fried;
     }
 }
