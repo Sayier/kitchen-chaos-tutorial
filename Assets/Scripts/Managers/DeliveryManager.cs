@@ -6,7 +6,7 @@ using UnityEngine;
 public class DeliveryManager : MonoBehaviour
 {
     public event EventHandler OnRecipeSpawned;
-    public event EventHandler OnRecipeCompleted;
+    public event EventHandler OnRecipeSuccess;
     public event EventHandler OnRecipeFailed;
 
     public static DeliveryManager Instance { get; private set; }
@@ -44,6 +44,7 @@ public class DeliveryManager : MonoBehaviour
         if (spawnRecipeTimerMax <= 0)
         {
             spawnRecipeTimerMax = 4f;
+            //Pick a random recipe from the list of all possible RecipeSOs and add it to the waiting orders list
             RecipeSO newRecipeOrder = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
             waitingRecipeSOList.Add(newRecipeOrder);
 
@@ -97,7 +98,7 @@ public class DeliveryManager : MonoBehaviour
                 successfulRecipeCount++;
                 waitingRecipeSOList.RemoveAt(i);
 
-                OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+                OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
 
                 return;
             }
