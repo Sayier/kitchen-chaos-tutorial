@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class Player : MonoBehaviour, IKitchenObjectParent
+public class Player : NetworkBehaviour, IKitchenObjectParent
 {
-    public static Player Instance { get; private set; }
+    //public static Player Instance { get; private set; }
 
     public event EventHandler OnItemPickUp;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
@@ -16,7 +17,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float rotationSpeed = 5f;
-    [SerializeField] private GameInput gameInput;
+    //[SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
 
@@ -26,17 +27,17 @@ public class Player : MonoBehaviour, IKitchenObjectParent
 
     private void Awake()
     {
-        if (Instance != null)
+        /*if (Instance != null)
         {
             Debug.LogError("Player instance has already been created.");
         }
-        Instance = this;
+        Instance = this;*/
     }
 
     private void Start()
     {
-        gameInput.OnInteractAction += GameInput_OnInteractAction;
-        gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+        GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+        GameInput.Instance.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
     } 
 
     private void Update()
@@ -195,7 +196,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent
     //Return movement direction as a normalized Vector3
     private Vector3 ConvertInputToNormalizedVector3()
     {
-        Vector2 inputVectorNormalized = gameInput.GetMovementVectorNormalized();
+        Vector2 inputVectorNormalized = GameInput.Instance.GetMovementVectorNormalized();
 
         Vector3 moveDirection = new(inputVectorNormalized.x, 0, inputVectorNormalized.y);
         return moveDirection;
