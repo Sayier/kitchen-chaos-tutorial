@@ -42,6 +42,10 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
     private void Update()
     {
+        //Only let the local player update the Player object
+        if (!IsOwner) {
+            return;
+        }
         HandleMovement();
         HandleInteractions();
     }
@@ -166,9 +170,9 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         }
 
         //Check if is walking, walking into an obstacle counts here
-        isWalking = moveDirection != Vector3.zero ? true : false;
+        isWalking = moveDirection != Vector3.zero;
 
-        if (moveDirection != Vector3.zero)
+        if (isWalking)
         {
             //Smoothly rotate the player to face the direction of movement
             transform.forward = Vector3.Slerp(transform.forward, moveDirection, Time.deltaTime * rotationSpeed);
