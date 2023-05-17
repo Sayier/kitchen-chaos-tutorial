@@ -19,9 +19,9 @@ public class GameManager : MonoBehaviour
         GameOver
     }
 
-    private float countdownToStartTimer = 3f;
+    private float countdownToStartTimer = 1f;
     private float gamePlayingTimer;
-    private readonly float gamePlayingTimerMax = 30f; 
+    private readonly float gamePlayingTimerMax = 300f; 
     private bool isGamePaused = false;
     private State state;
     
@@ -41,6 +41,10 @@ public class GameManager : MonoBehaviour
     {
         GameInput.Instance.OnPauseAction += GameInput_OnPauseAction;
         GameInput.Instance.OnInteractAction += GameInput_OnInteractAction;
+
+        //Skipping starting phase to facilitate quick test cycles
+        gamePlayingTimer = gamePlayingTimerMax;
+        ChangeState(State.GamePlaying);
     }
 
     private void Update()
@@ -126,6 +130,12 @@ public class GameManager : MonoBehaviour
     public bool IsCountdownToStartActive()
     {
         return state == State.CountdownToStart;
+    }
+
+    //Return if the waiting to start is active
+    public bool IsWaitingToStartActive()
+    {
+        return state == State.WaitingToStart;
     }
 
     //Return if the game is over

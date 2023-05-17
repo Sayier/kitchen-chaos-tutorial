@@ -23,13 +23,13 @@ public class TutorialUI : MonoBehaviour
         GameManager.Instance.OnGameStateChanged += GameManager_OnGameStateChanged;
 
         UpdateVisual();
-
         Show();
     }
 
     private void GameManager_OnGameStateChanged(object sender, System.EventArgs e)
     {
-        if (GameManager.Instance.IsCountdownToStartActive())
+        //Only show tutorial screen in the waiting to start state
+        if (!GameManager.Instance.IsWaitingToStartActive())
         {
             Hide();
         }
@@ -37,6 +37,7 @@ public class TutorialUI : MonoBehaviour
 
     private void GameInput_OnRebind(object sender, System.EventArgs e)
     {
+        //Any time an input is rebound make sure to pull the new key visuals
         UpdateVisual();
     }
 
