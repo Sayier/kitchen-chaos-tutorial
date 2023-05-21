@@ -29,7 +29,7 @@ public class SoundManager : MonoBehaviour
         DeliveryManager.Instance.OnRecipeSuccess += DeliveryManager_OnRecipeCompleted;
         DeliveryManager.Instance.OnRecipeFailed += DeliveryManager_OnRecipeFailed;
         CuttingCounter.OnAnyCut += CuttingCounter_OnAnyCut;
-        //Player.Instance.OnItemPickUp += Player_OnItemPickUp;
+        Player.OnAnyItemPickUp += Player_OnItemPickUp;
         BaseCounter.OnItemDropped += Counter_OnItemDropped;
         TrashCounter.OnItemThrownOut += TrashCounter_OnItemThrownOut;
     }

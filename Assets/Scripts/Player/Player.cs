@@ -7,14 +7,16 @@ using UnityEngine;
 public class Player : NetworkBehaviour, IKitchenObjectParent
 {
     public static event EventHandler OnAnyPlayerSpawned;
+    public static event EventHandler OnAnyItemPickUp;
     public static void ResetStaticData()
     {
         OnAnyPlayerSpawned = null;
+        OnAnyItemPickUp = null;
     }
 
     public static Player LocalInstance { get; private set; }
 
-    public event EventHandler OnItemPickUp;
+    //public event EventHandler OnItemPickUp;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs
     {
@@ -237,7 +239,8 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
         if(kitchenObject != null)
         {
-            OnItemPickUp?.Invoke(this, EventArgs.Empty);
+            //OnItemPickUp?.Invoke(this, EventArgs.Empty);
+            OnAnyItemPickUp?.Invoke(this, EventArgs.Empty);
         }
     }
 
