@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class DeliveryManager : MonoBehaviour
+public class DeliveryManager : NetworkBehaviour
 {
     public event EventHandler OnRecipeSpawned;
     public event EventHandler OnRecipeSuccess;
@@ -14,7 +15,8 @@ public class DeliveryManager : MonoBehaviour
     [SerializeField] private RecipeListSO recipeListSO;
 
     private List<RecipeSO> waitingRecipeSOList;
-    private float spawnRecipeTimerMax = 4f;
+    private float spawnRecipeTimer;
+    private readonly float spawnRecipeTimerMax = 4f;
     private readonly int waitingRecipesMax = 5;
     private int successfulRecipeCount;
 
@@ -25,8 +27,20 @@ public class DeliveryManager : MonoBehaviour
         waitingRecipeSOList = new List<RecipeSO>();
     }
 
+    private void Start()
+    {
+        //Initialize spawn recipe timer
+        spawnRecipeTimer = spawnRecipeTimerMax;
+    }
+
     private void Update()
     {
+        //Only the server should generate recipes and then share them out to the clients
+        if (!IsServer)
+        {
+            return;
+        }
+
         //If the game is not in the Game Playing state then orders should not be generating
         if (!GameManager.Instance.IsGamePlaying())
         {
@@ -40,16 +54,28 @@ public class DeliveryManager : MonoBehaviour
         }
 
         //Count down spawn timer and then check if it is time to spawn the next order
-        spawnRecipeTimerMax -= Time.deltaTime;
-        if (spawnRecipeTimerMax <= 0)
+        spawnRecipeTimer -= Time.deltaTime;
+        if (spawnRecipeTimer <= 0)
         {
-            spawnRecipeTimerMax = 4f;
-            //Pick a random recipe from the list of all possible RecipeSOs and add it to the waiting orders list
-            RecipeSO newRecipeOrder = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
-            waitingRecipeSOList.Add(newRecipeOrder);
+            spawnRecipeTimer = spawnRecipeTimerMax;
+            //Pick a random recipe index from the list of all possible RecipeSOs and pass that index to the relevant ClientRpc
 
-            OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
+            int newRecipeSOIndex = UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count);
+
+            SpawnNewWaitingRecipeClientRpc(newRecipeSOIndex);
+            
         }
+    }
+
+    [ClientRpc]
+    private void SpawnNewWaitingRecipeClientRpc(int newWaitingRecipeSOIndex)
+    {
+        //Using the passedc index pull a specific Recipe, add it to the waitingRecipeSO list, and update all systems and clients
+        RecipeSO waitingRecipeSO = recipeListSO.recipeSOList[newWaitingRecipeSOIndex];
+
+        waitingRecipeSOList.Add(waitingRecipeSO);
+
+        OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
     }
 
     public void DeliverRecipe(PlateKitchenObject plateKitchenObject)
@@ -95,16 +121,46 @@ public class DeliveryManager : MonoBehaviour
             //Player delivered the correct recipe
             if (plateContentsMatchRecipe)
             {
-                successfulRecipeCount++;
-                waitingRecipeSOList.RemoveAt(i);
-
-                OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
+                DeliverCorrectRecipeServerRpc(i);                
 
                 return;
             }
         }
         //Player delivered the wrong recipe
+        DeliverIncorrectRecipeServerRpc();
+    }
+
+    //Called to inform the server that the wrong recipe has been delivered
+    [ServerRpc(RequireOwnership = false)]
+    private void DeliverIncorrectRecipeServerRpc()
+    {
+        //Inform all the clients
+        DeliverIncorrectRecipeClientRpc();
+    }
+
+    //Update all the systems on each client that the delivered order failed
+    [ClientRpc]
+    private void DeliverIncorrectRecipeClientRpc()
+    {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
+    }
+
+    //Called to inform the server that the correct recipe has been delivered and what index in the waitRecipeList it is at
+    [ServerRpc(RequireOwnership = false)]
+    private void DeliverCorrectRecipeServerRpc(int correctRecipeSOListIndex)
+    {
+        //Inform all the clients that the recipe at the passed index was successfully deliverd
+        DeliverCorrectRecipeClientRpc(correctRecipeSOListIndex);         
+    }
+
+    //Update all the systems on each client that the delivered order was successful
+    [ClientRpc]
+    private void DeliverCorrectRecipeClientRpc(int correctRecipeSOListIndex)
+    {
+        successfulRecipeCount++;
+        waitingRecipeSOList.RemoveAt(correctRecipeSOListIndex);
+
+        OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
     }
 
     //Return a list of every ordered recipe
