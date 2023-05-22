@@ -21,7 +21,7 @@ public class PlayerSounds : MonoBehaviour
             footstepTimer -= Time.deltaTime;
             if (footstepTimer <= 0f)
             {
-                footstepTimer = .1f;
+                footstepTimer = footstepTimerMax;
 
                 SoundManager.Instance.PlayFootstepsSound(player.transform.position);
             }
