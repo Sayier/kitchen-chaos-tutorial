@@ -5,5 +5,5 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "SO/Lists/KitchenObjectListSO")]
 public class KitchenObjectListSO : ScriptableObject
 {
-    public List<KitchenObject> kitchenObjectSOList;
+    public List<KitchenObjectSO> kitchenObjectSOList;
 }
