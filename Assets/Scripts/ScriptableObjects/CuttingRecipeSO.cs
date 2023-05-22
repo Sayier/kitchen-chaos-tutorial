@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu()]
+[CreateAssetMenu(menuName = "SO/Converter/CuttingRecipeSO")]
+
 public class CuttingRecipeSO : ScriptableObject
 {
     public KitchenObjectSO input;
