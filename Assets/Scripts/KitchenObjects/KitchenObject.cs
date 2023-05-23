@@ -68,8 +68,13 @@ public class KitchenObject : NetworkBehaviour
 
     public void DestroySelf()
     {
-        kitchenObjectParent.ClearKitchenObject();
         Destroy(gameObject);
+    }
+
+    //Disassociate the KitchenObject with its current KitchenObjectParent
+    public void ClearKitchenObjectOnParent()
+    {
+        kitchenObjectParent.ClearKitchenObject();
     }
 
     //Returns true if this KitchenObject is a PlateKitchenObject (and return a reference to the PlateKitchenObject)
@@ -85,9 +90,15 @@ public class KitchenObject : NetworkBehaviour
         return false;
     }
 
-    //Initate spawning of the KitchenObject (processed by the MultiplayerManager for network syncing)
+    //Initiate spawning the KitchenObject (processed by the MultiplayerManager for network syncing)
     public static void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectParent kitchenObjectParent)
     {
         MultiplayerManager.Instance.SpawnKitchenObject(kitchenObjectSO, kitchenObjectParent);
+    }
+
+    //Initiate destroying the KitchenObject (process by the MultiplayerManager for network syncing)
+    public static void DestroyKitchenObject(KitchenObject kitchenObject)
+    {
+        MultiplayerManager.Instance.DestroyKitchenObject(kitchenObject);
     }
 }
