@@ -96,7 +96,7 @@ public class KitchenObject : NetworkBehaviour
         MultiplayerManager.Instance.SpawnKitchenObject(kitchenObjectSO, kitchenObjectParent);
     }
 
-    //Initiate destroying the KitchenObject (process by the MultiplayerManager for network syncing)
+    //Initiate destroying the KitchenObject (processed by the MultiplayerManager for network syncing)
     public static void DestroyKitchenObject(KitchenObject kitchenObject)
     {
         MultiplayerManager.Instance.DestroyKitchenObject(kitchenObject);

@@ -14,11 +14,12 @@ public class TrashCounter : BaseCounter
 
     public override void Interact(Player player)
     {   
-        //If player is holding an item destory it and inform Sound system 
         if (player.HasKitchenObject())
         {
+            //Request the destruction of the KitchenObject
             KitchenObject.DestroyKitchenObject(player.GetKitchenObject());
 
+            //Inform the Host/Clients that the Sound system should play relevant Sound clip
             InteractLogicServerRpc();
         }
     }
