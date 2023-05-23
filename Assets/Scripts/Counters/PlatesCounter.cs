@@ -18,6 +18,7 @@ public class PlatesCounter : BaseCounter
 
     private void Update()
     {
+        //We only want the server controlling when to spawn new plates
         if (!IsServer)
         {
             return;
@@ -51,6 +52,7 @@ public class PlatesCounter : BaseCounter
     [ClientRpc]
     private void SpawnPlateClientRpc()
     {
+        //Add the plate and inform the visuals to update to show one more plate
         plateSpawnAmount++;
         OnPlateSpawned?.Invoke(this, EventArgs.Empty);
     }
@@ -78,6 +80,7 @@ public class PlatesCounter : BaseCounter
     [ClientRpc]
     private void InteractLogicClientRpc()
     {
+        //Remove the plate and inform the visuals to update to show one less plate
         plateSpawnAmount--;
         OnPlatePickedUp?.Invoke(this, EventArgs.Empty);
     }
