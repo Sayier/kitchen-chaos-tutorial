@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class CuttingCounter : BaseCounter, IHasProgress
@@ -25,25 +26,16 @@ public class CuttingCounter : BaseCounter, IHasProgress
         {
             //Put object on counter and reset cutting UI visualizer to 0
             player.GetKitchenObject().SetKitchenObjectParent(this);
-            cuttingProgress = 0;
 
-            OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
-            {
-                progressNormalized = cuttingProgress
-            });
+            InteractLogicResetCuttingProgressServerRpc();
         }
         //Check if players hands are empty and if the counter has an object to pick up
         else if (!player.HasKitchenObject() && HasKitchenObject())
         {
-            //Pick up object from counter and reset cutting visualizer to 0
+            //Pick up object from counter and request server to reset cutting visualizer to 0 for all clients
             GetKitchenObject().SetKitchenObjectParent(player);
 
-            cuttingProgress = 0;
-
-            OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
-            {
-                progressNormalized = cuttingProgress
-            });
+            InteractLogicResetCuttingProgressServerRpc();
         }
         //Check if counter has an object that can be put on a plate and whether or not the player is holding a plate
         else if (player.HasKitchenObject() && player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject) && HasKitchenObject())
@@ -57,32 +49,71 @@ public class CuttingCounter : BaseCounter, IHasProgress
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void InteractLogicResetCuttingProgressServerRpc()
+    {
+        //Broadcast to all clients to reset the cutting progress
+        InteractLogicResetCuttingProgressClientRpc();
+    }
+
+    [ClientRpc]
+    private void InteractLogicResetCuttingProgressClientRpc()
+    {
+        //Set cutting progress to 0 and send Event to update progress visuals
+        cuttingProgress = 0;
+
+        OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+        {
+            progressNormalized = cuttingProgress
+        });
+    }
+
     public override void InteractAlternate(Player player)
     {
         //Check if players hands are empty and if item on counter is cutable
         if(!player.HasKitchenObject() && HasKitchenObject() && HasRecipeForInput(GetKitchenObject().GetKitchenObjectSO()))
         {
-            //Update cutting progress and send out events to UI and Sound systems
-            cuttingProgress++;
-            CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
+            //Request to the server to cut the KitchenObject on the CuttingCounter
+            CuttingLogicServerRpc();
+            TestCuttingDoneServerRpc();
+        }
+    }
 
-            OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
-            {
-                progressNormalized = (float) this.cuttingProgress / cuttingRecipeSO.cuttingProgressMax
-            });
+    [ServerRpc(RequireOwnership = false)]
+    public void CuttingLogicServerRpc()
+    {
+        //Broadcast to clients that the KitchenObject on the CuttingCounter is being cut
+        CuttingLogicClientRpc();
+    }
 
-            OnCut?.Invoke(this, EventArgs.Empty);
-            OnAnyCut?.Invoke(this, EventArgs.Empty);
+    [ClientRpc]
+    public void CuttingLogicClientRpc()
+    {
+        //Update cutting progress and send out events to UI and Sound systems
+        cuttingProgress++;
+        CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
 
-            if (cuttingProgress >= cuttingRecipeSO.cuttingProgressMax)
-            {
-                //If cutting progress is complete convert to the chopped version of item
-                KitchenObjectSO slicedKitchenObjectSO = GetOutputForInput(GetKitchenObject().GetKitchenObjectSO());
+        OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs
+        {
+            progressNormalized = (float)this.cuttingProgress / cuttingRecipeSO.cuttingProgressMax
+        });
 
-                GetKitchenObject().DestroySelf();
+        OnCut?.Invoke(this, EventArgs.Empty);
+        OnAnyCut?.Invoke(this, EventArgs.Empty);
+    }
 
-                KitchenObject.SpawnKitchenObject(slicedKitchenObjectSO, this);
-            }
+    [ServerRpc(RequireOwnership = false)]
+    private void TestCuttingDoneServerRpc()
+    {
+        CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
+        if (cuttingProgress >= cuttingRecipeSO.cuttingProgressMax)
+        {
+            //If cutting progress is complete convert to the chopped version of item
+            KitchenObjectSO slicedKitchenObjectSO = GetOutputForInput(GetKitchenObject().GetKitchenObjectSO());
+
+            KitchenObject.DestroyKitchenObject(GetKitchenObject());
+
+            KitchenObject.SpawnKitchenObject(slicedKitchenObjectSO, this);
         }
     }
 
