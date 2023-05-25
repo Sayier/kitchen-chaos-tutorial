@@ -16,7 +16,6 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
     public static Player LocalInstance { get; private set; }
 
-    //public event EventHandler OnItemPickUp;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs
     {
@@ -25,9 +24,10 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
     [SerializeField] private float moveSpeed = 7f;
     [SerializeField] private float rotationSpeed = 5f;
-    //[SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
+    [SerializeField] private LayerMask collisionsLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
+    [SerializeField] private List<Vector3> spawnPositionList;
 
     private bool isWalking = false;
     private BaseCounter selectedCounter;
@@ -39,6 +39,8 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         {
             LocalInstance = this;
         }
+
+        transform.position = spawnPositionList[(int)OwnerClientId];
         OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
     }
 
@@ -138,7 +140,6 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
 
     private void HandleMovement()
     {
-        float playerHeight = 2f;
         float playerRadius = .65f;
 
         //Pull movement direction from input and calculate how far the player has moved this tick
@@ -146,12 +147,12 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
         float moveDistance = moveSpeed * Time.deltaTime;
 
         //Raycast to check if something is blocking the player
-        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirection, moveDistance);
+        bool canMove = !Physics.BoxCast(transform.position, Vector3.one * playerRadius, moveDirection, Quaternion.identity, moveDistance, collisionsLayerMask);
         if (!canMove)
         {
             //If something is blocking, check if player can still move in the X direction of their movement
             Vector3 moveDirectionX = new Vector3(moveDirection.x, 0, 0).normalized;
-            canMove = IsMovingOnXAxis(moveDirection) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionX, moveDistance);
+            canMove = IsMovingOnXAxis(moveDirection) && !Physics.BoxCast(transform.position, Vector3.one * playerRadius, moveDirectionX, Quaternion.identity, moveDistance, collisionsLayerMask);
 
             if (canMove)
             {
@@ -162,7 +163,7 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
             {
                 //Player is blocked forward and is blocked in X, check if player can move in the Z direction
                 Vector3 moveDirectionZ = new Vector3(0, 0, moveDirection.z).normalized;
-                canMove = IsMovingOnZAxis(moveDirection) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirectionZ, moveDistance);
+                canMove = IsMovingOnZAxis(moveDirection) && !Physics.BoxCast(transform.position, Vector3.one * playerRadius, moveDirectionZ, Quaternion.identity, moveDistance, collisionsLayerMask);
 
                 if (canMove)
                 {
