@@ -164,9 +164,9 @@ public class StoveCounter : BaseCounter, IHasProgress
             {
                 //KitchenObject can be added to plate, at this point it has already been added to the plate by the TryAddIngrediant call
                 //so we just need to destroy the version of the object on the Stove, set Stove state to Idle, and update events
-                GetKitchenObject().DestroySelf();
+                KitchenObject.DestroyKitchenObject(GetKitchenObject());
 
-                state.Value = State.Idle;
+                SetStateIdleServerRpc();
             }
         }
     }
