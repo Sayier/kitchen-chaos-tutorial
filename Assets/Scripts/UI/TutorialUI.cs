@@ -20,16 +20,15 @@ public class TutorialUI : MonoBehaviour
     private void Start()
     {
         GameInput.Instance.OnRebind += GameInput_OnRebind;
-        GameManager.Instance.OnGameStateChanged += GameManager_OnGameStateChanged;
+        GameManager.Instance.OnLocalPlayerReady += GameManager_OnLocalPlayerReady;
 
         UpdateVisual();
         Show();
     }
 
-    private void GameManager_OnGameStateChanged(object sender, System.EventArgs e)
+    private void GameManager_OnLocalPlayerReady(object sender, System.EventArgs e)
     {
-        //Only show tutorial screen in the waiting to start state
-        if (!GameManager.Instance.IsWaitingToStartActive())
+        if (GameManager.Instance.GetIsLocalPlayerReady())
         {
             Hide();
         }
