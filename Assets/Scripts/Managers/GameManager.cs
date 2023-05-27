@@ -34,6 +34,7 @@ public class GameManager : NetworkBehaviour
     private readonly float gamePlayingTimerMax = 300f; 
     private bool isLocalGamePaused = false;
     private bool isLocalPlayerReady;
+    private bool autoTestGamePausedState;
     
 
     private void Awake()
@@ -58,6 +59,19 @@ public class GameManager : NetworkBehaviour
     {
         state.OnValueChanged += State_OnValueChanged;
         isGamePaused.OnValueChanged += IsGamePaused_OnValueChanged;
+
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+        }
+    }
+
+    private void NetworkManager_OnClientDisconnectCallback(ulong clientId)
+    {
+        //If we try to run TestGamePausedState now the player will still be in the process of disconnecting
+        //We are going to set a trigger now and then check this trigger in LateUpdate
+        //after the player has disconnected where it will be safe to run TestGamePausedState
+        autoTestGamePausedState = true;
     }
 
     private void Update()
@@ -88,6 +102,15 @@ public class GameManager : NetworkBehaviour
                 break;
             case State.GameOver:
                 break;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (autoTestGamePausedState)
+        {
+            autoTestGamePausedState = false;
+            TestGamePausedState();
         }
     }
 
