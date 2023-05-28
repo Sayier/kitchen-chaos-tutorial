@@ -1,11 +1,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LobbyManager : MonoBehaviour
 {
@@ -21,6 +28,8 @@ public class LobbyManager : MonoBehaviour
     {
         public List<Lobby> lobbyList;
     }
+
+    private const string KeyRelayJoinCode = "RelayJoinCode";
 
     private Lobby joinedLobby;
 
@@ -63,6 +72,22 @@ public class LobbyManager : MonoBehaviour
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
     }
 
+    private async Task<JoinAllocation> JoinRelay(string relayJoinCode)
+    {
+        try
+        {
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayJoinCode);
+
+            return joinAllocation;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.Log(e);
+
+            return default;
+        }
+    }
+
     public async void CreateLobby(string lobbyName, bool isPrivate)
     {
         OnCreateLobbyStarted?.Invoke(this, EventArgs.Empty);
@@ -71,6 +96,20 @@ public class LobbyManager : MonoBehaviour
             joinedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, MultiplayerManager.MaxPlayerAmount, new CreateLobbyOptions
             {
                 IsPrivate = isPrivate
+            });
+
+            Allocation allocation = await AllocateRelay();
+
+            string relayJoinCode = await GetRelayJoinCode(allocation);
+
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
+
+            await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    { KeyRelayJoinCode, new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode) }
+                }
             });
 
             MultiplayerManager.Instance.StartHost();
@@ -90,6 +129,11 @@ public class LobbyManager : MonoBehaviour
         {
             joinedLobby = await LobbyService.Instance.QuickJoinLobbyAsync();
 
+            string relayJoinCode = joinedLobby.Data[KeyRelayJoinCode].Value;
+
+            JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+
             MultiplayerManager.Instance.StartClient();
         }
         catch (LobbyServiceException e)
@@ -106,6 +150,11 @@ public class LobbyManager : MonoBehaviour
         {
             joinedLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(lobbyCode);
 
+            string relayJoinCode = joinedLobby.Data[KeyRelayJoinCode].Value;
+
+            JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+
             MultiplayerManager.Instance.StartClient();
         }
         catch (LobbyServiceException e)
@@ -121,6 +170,11 @@ public class LobbyManager : MonoBehaviour
         try
         {
             joinedLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
+
+            string relayJoinCode = joinedLobby.Data[KeyRelayJoinCode].Value;
+
+            JoinAllocation joinAllocation = await JoinRelay(relayJoinCode);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
 
             MultiplayerManager.Instance.StartClient();
         }
@@ -153,8 +207,14 @@ public class LobbyManager : MonoBehaviour
             return;
         }
 
+        //No reason to refresh the lobby list if not on Lobby scene
+        if (SceneManager.GetActiveScene().name.ToString() != Loader.Scene.LobbyScene.ToString())
+        {
+            return;
+        }
+
         //No need to update the lobby list if the player is already in a lobby
-        if(joinedLobby != null)
+        if (joinedLobby != null)
         {
             return;
         }
@@ -166,6 +226,39 @@ public class LobbyManager : MonoBehaviour
             listLobbiesTimer = ListLobbiesTimerMax;
 
             ListLobbies();
+        }
+    }
+
+    private async Task<Allocation> AllocateRelay()
+    {
+        try
+        {
+            //Max connection count does not include the host connection
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(MultiplayerManager.MaxPlayerAmount - 1);
+
+            return allocation;
+        }
+        catch(RelayServiceException e)
+        {
+            Debug.Log(e);
+
+            return default;
+        }
+    }
+
+    private async Task<string> GetRelayJoinCode(Allocation allocation)
+    {
+        try
+        {
+            string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+
+            return relayJoinCode;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.Log(e);
+
+            return default;
         }
     }
 
