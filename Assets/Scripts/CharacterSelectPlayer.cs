@@ -7,15 +7,21 @@ using UnityEngine.UI;
 
 public class CharacterSelectPlayer : MonoBehaviour
 {
-    [SerializeField] private int playerIndex;
     [SerializeField] private GameObject readyText;
     [SerializeField] private PlayerVisual playerVisual;
     [SerializeField] private Button kickPlayerButton;
+    [SerializeField] private TextMeshPro playerNameText;
+
+    [SerializeField] private int playerIndex;
+
 
     private void Awake()
     {
         kickPlayerButton.onClick.AddListener(() =>
         {
+            PlayerData playerData = MultiplayerManager.Instance.GetPlayerDataFromPlayerIndex(playerIndex);
+
+            LobbyManager.Instance.KickPlayer(playerData.playerId.ToString());
             MultiplayerManager.Instance.KickPlayer(playerIndex);
         });
     }
@@ -56,6 +62,8 @@ public class CharacterSelectPlayer : MonoBehaviour
             readyText.SetActive(CharacterSelectReady.Instance.IsPlayerReady(playerData.clientId));
 
             playerVisual.SetPlayerColor(MultiplayerManager.Instance.GetPlayerColor(playerData.colorId));
+
+            playerNameText.text = playerData.playerName.ToString();
         }
         else
         {
