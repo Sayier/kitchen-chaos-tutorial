@@ -13,7 +13,7 @@ public class MultiplayerManager : NetworkBehaviour
     public event EventHandler OnFailedToJoinGame;
     public event EventHandler OnPlayerDataNetworkListChanged;
 
-    private const int MaxPlayerAmount = 4;
+    public const int MaxPlayerAmount = 4;
     private const int PlayerDataIndexNotFound = -1;
 
     [SerializeField] private KitchenObjectListSO kitchenObjectListSO;
