@@ -35,6 +35,10 @@ public class LobbyMessageUI : MonoBehaviour
     private void OnDestroy()
     {
         MultiplayerManager.Instance.OnFailedToJoinGame -= MultiplayerManager_OnFailedToJoinGame;
+        LobbyManager.Instance.OnCreateLobbyStarted -= LobbyManager_OnCreateLobbyStarted;
+        LobbyManager.Instance.OnCreateLobbyFailed -= LobbyManager_OnCreateLobbyFailed;
+        LobbyManager.Instance.OnJoinLobbyStarted -= LobbyManager_OnJoinLobbyStarted;
+        LobbyManager.Instance.OnJoinLobbyFailed -= LobbyManager_OnJoinLobbyFailed;
     }
 
     private void LobbyUI_OnNoLobbyCodeInput(object sender, System.EventArgs e)
