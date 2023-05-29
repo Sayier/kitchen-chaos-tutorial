@@ -15,6 +15,8 @@ public class MultiplayerManager : NetworkBehaviour
     public event EventHandler OnFailedToJoinGame;
     public event EventHandler OnPlayerDataNetworkListChanged;
 
+    public static bool isPlayMultiplayer;
+
     public const int MaxPlayerAmount = 4;
     private const int PlayerDataIndexNotFound = -1;
     private const string PlayerPrefsPlayerNameMultiplayer = "PlayerNameMultiplayer";
@@ -38,6 +40,15 @@ public class MultiplayerManager : NetworkBehaviour
         playerDataNetworkList.OnListChanged += PlayerDataNetworkList_OnListChanged;
 
         playerName = PlayerPrefs.GetString(PlayerPrefsPlayerNameMultiplayer, $"PlayerName{UnityEngine.Random.Range(100,999)}");
+    }
+
+    private void Start()
+    {
+        if (!isPlayMultiplayer)
+        {
+            StartHost();
+            Loader.LoadNetwork(Loader.Scene.GameScene);
+        }
     }
 
     private void PlayerDataNetworkList_OnListChanged(NetworkListEvent<PlayerData> changeEvent)

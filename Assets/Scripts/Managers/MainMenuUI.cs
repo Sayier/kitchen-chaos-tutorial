@@ -6,13 +6,21 @@ using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
 {
-    [SerializeField] private Button playButton;
+    [SerializeField] private Button playMultiplayerButton;
+    [SerializeField] private Button playSinglePlayerButton;
     [SerializeField] private Button quitButton;
 
     private void Awake()
     {
-        playButton.onClick.AddListener(() =>
+        playMultiplayerButton.onClick.AddListener(() =>
         {
+            MultiplayerManager.isPlayMultiplayer = true;
+            Loader.Load(Loader.Scene.LobbyScene);
+        });
+
+        playSinglePlayerButton.onClick.AddListener(() =>
+        {
+            MultiplayerManager.isPlayMultiplayer = false;
             Loader.Load(Loader.Scene.LobbyScene);
         });
 
@@ -27,6 +35,6 @@ public class MainMenuUI : MonoBehaviour
 
     private void Start()
     {
-        playButton.Select();
+        playMultiplayerButton.Select();
     }
 }
