@@ -82,6 +82,12 @@ public class CuttingCounter : BaseCounter, IHasProgress
     [ServerRpc(RequireOwnership = false)]
     public void CuttingLogicServerRpc()
     {
+        //Do this check again to prevent bug where a Client can cut an illegal
+        if (!HasKitchenObject() || !HasRecipeForInput(GetKitchenObject().GetKitchenObjectSO()))
+        {
+            return;
+        }
+
         //Broadcast to clients that the KitchenObject on the CuttingCounter is being cut
         CuttingLogicClientRpc();
     }
@@ -105,6 +111,12 @@ public class CuttingCounter : BaseCounter, IHasProgress
     [ServerRpc(RequireOwnership = false)]
     private void TestCuttingDoneServerRpc()
     {
+        //Do this check again to prevent bug where a Client can cut an illegal
+        if (!HasKitchenObject() || !HasRecipeForInput(GetKitchenObject().GetKitchenObjectSO()))
+        {
+            return;
+        }
+
         CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(GetKitchenObject().GetKitchenObjectSO());
         if (cuttingProgress >= cuttingRecipeSO.cuttingProgressMax)
         {

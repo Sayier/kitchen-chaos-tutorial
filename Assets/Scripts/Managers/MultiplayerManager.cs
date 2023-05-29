@@ -106,21 +106,26 @@ public class MultiplayerManager : NetworkBehaviour
     private void SpawnKitchenObjectServerRpc(int kitchenObjectSOIndex, NetworkObjectReference kitchenObjectParentNetworkObjectReference)
     {
         //Retrieve the KitchenObjectSO from the kitchenObjectSOIndex and Instantiate the prefab
-        //Then Spawn the associated NetworkObject
         KitchenObjectSO kitchenObjectSO = GetKitchenObjectSOFromIndex(kitchenObjectSOIndex);
+        
+        //Get which KitchenObjectParent should be associated with the spawned KitchenObject by pulling it from
+        //the from the NetworkObject in the passed NetworkObjectReference
+        kitchenObjectParentNetworkObjectReference.TryGet(out NetworkObject kitchenObjectParentNetworkObject);
+        IKitchenObjectParent kitchenObjectParent = kitchenObjectParentNetworkObject.GetComponent<IKitchenObjectParent>();
+
+        if (kitchenObjectParent.HasKitchenObject())
+        {
+            //Parent has already spawned an object
+            return;
+        }
+
         Transform kitchenObjectTransform = Instantiate(kitchenObjectSO.prefab);
 
         NetworkObject kitchenObjectNetworkObject = kitchenObjectTransform.GetComponent<NetworkObject>();
         kitchenObjectNetworkObject.Spawn(true);
 
-        //Get the which KitchenObjectParent should be associated with the spawn KitchenObject by pulling it from
-        //the from the NetworkObject in the passed NetworkObjectReference
         //Set the newly spawned KitchenObject to this parent
-        kitchenObjectParentNetworkObjectReference.TryGet(out NetworkObject kitchenObjectParentNetworkObject);
-        IKitchenObjectParent kitchenObjectParent = kitchenObjectParentNetworkObject.GetComponent<IKitchenObjectParent>();
-
         KitchenObject spawnedKitchenObject = kitchenObjectTransform.GetComponent<KitchenObject>();
-
         spawnedKitchenObject.SetKitchenObjectParent(kitchenObjectParent);
     }
 
@@ -145,6 +150,13 @@ public class MultiplayerManager : NetworkBehaviour
     {
         //Retrieve the KitchenObject from the NetworkObjectReference
         kitchenObjectNetworkObjectReference.TryGet(out NetworkObject kitchenObjectNetworkObject);
+
+        if (kitchenObjectNetworkObject == null)
+        {
+            //Make sure the kitchenObjectNetworkObject actually exists before continuing
+            //Can already be destroyed depending on network lad and extra inputs
+            return;
+        }
         KitchenObject kitchenObject = kitchenObjectNetworkObject.GetComponent<KitchenObject>();
 
         //Inform all of the clients that the KitchenObject's parent needs to be unset in preperation for the Destory call

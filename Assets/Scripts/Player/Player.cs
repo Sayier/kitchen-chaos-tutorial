@@ -86,8 +86,8 @@ public class Player : NetworkBehaviour, IKitchenObjectParent
             return;
         }
 
-        //If a counter is selected allow an alternate interaction on button press
-        if (selectedCounter != null)
+        //If a counter is selected and player's hands are empty then allow an alternate interaction on button press
+        if (selectedCounter != null && !HasKitchenObject())
         {
             selectedCounter.InteractAlternate(this);
         }
