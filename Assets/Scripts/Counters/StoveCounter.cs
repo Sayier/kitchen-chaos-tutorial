@@ -251,4 +251,9 @@ public class StoveCounter : BaseCounter, IHasProgress
     {
         return state.Value == State.Fried;
     }
+
+    public bool IsFrying()
+    {
+        return state.Value == State.Frying;
+    }
 }

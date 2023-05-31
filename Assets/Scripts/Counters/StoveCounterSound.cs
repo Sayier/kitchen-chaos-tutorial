@@ -28,7 +28,11 @@ public class StoveCounterSound : MonoBehaviour
 
     private void GameManager_OnLocalGameUnpaused(object sender, System.EventArgs e)
     {
-        audioSource.Play();
+        bool playSound = stoveCounter.IsFrying() || stoveCounter.IsFried();
+
+        if (playSound) { 
+            audioSource.Play();
+        }
     }
 
     private void GameManager_OnLocalGamePaused(object sender, System.EventArgs e)
