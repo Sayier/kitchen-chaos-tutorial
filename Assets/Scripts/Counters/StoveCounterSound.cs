@@ -8,6 +8,7 @@ public class StoveCounterSound : MonoBehaviour
     private StoveCounter stoveCounter;
     private float warningSoundTimer;
     private bool playWarningSound;
+    private float volume;
 
     private void Awake()
     {
@@ -19,6 +20,25 @@ public class StoveCounterSound : MonoBehaviour
     {
         stoveCounter.OnStateChanged += StoveCounter_OnStateChanged;
         stoveCounter.OnProgressChanged += StoveCounter_OnProgressChanged;
+
+        SoundManager.Instance.OnSoundEffectsVolumeChanged += SoundManager_OnSoundEffectsVolumeChanged;
+        GameManager.Instance.OnLocalGamePaused += GameManager_OnLocalGamePaused;
+        GameManager.Instance.OnLocalGameUnpaused += GameManager_OnLocalGameUnpaused;
+    }
+
+    private void GameManager_OnLocalGameUnpaused(object sender, System.EventArgs e)
+    {
+        audioSource.Play();
+    }
+
+    private void GameManager_OnLocalGamePaused(object sender, System.EventArgs e)
+    {
+        audioSource.Pause();
+    }
+
+    private void SoundManager_OnSoundEffectsVolumeChanged(object sender, SoundManager.OnSoundEffectsVolumeChangedEventArgs e)
+    {
+        audioSource.volume = e.soundEffectsVolume;
     }
 
     private void Update()

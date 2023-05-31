@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,10 +7,17 @@ public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance { get; private set; }
 
+    public event EventHandler<OnSoundEffectsVolumeChangedEventArgs> OnSoundEffectsVolumeChanged;
+    public class OnSoundEffectsVolumeChangedEventArgs : EventArgs
+    {
+        public float soundEffectsVolume;
+    }
+
     [SerializeField] private AudioClipReferencesSO audioClipReferencesSO;
     [SerializeField] private Transform deliveryCounterSoundSource;
 
     private const string PlayerPrefsSoundEffectsVolume = "SoundEffectsVolume";
+    public const float SoundEffectsVolumeLevelMax = 100f;
 
     private float volume = 1f;
 
@@ -26,12 +34,27 @@ public class SoundManager : MonoBehaviour
 
     private void Start()
     {
+        OptionsUI.Instance.OnSoundEffectsSliderChanged += OptionsUI_OnSoundEffectsSliderChanged;
         DeliveryManager.Instance.OnRecipeSuccess += DeliveryManager_OnRecipeCompleted;
         DeliveryManager.Instance.OnRecipeFailed += DeliveryManager_OnRecipeFailed;
         CuttingCounter.OnAnyCut += CuttingCounter_OnAnyCut;
         Player.OnAnyItemPickUp += Player_OnItemPickUp;
         BaseCounter.OnItemDropped += Counter_OnItemDropped;
         TrashCounter.OnItemThrownOut += TrashCounter_OnItemThrownOut;
+    }
+
+    private void OptionsUI_OnSoundEffectsSliderChanged(object sender, OptionsUI.OnSliderChangedEventArgs e)
+    {
+        //Normalizing the volume since slider goes 0-100 but AudioSource.volume goes 0-1
+        volume = e.sliderValue / SoundEffectsVolumeLevelMax;
+
+        OnSoundEffectsVolumeChanged?.Invoke(this, new OnSoundEffectsVolumeChangedEventArgs
+        {
+            soundEffectsVolume = volume
+        });
+
+        PlayerPrefs.SetFloat(PlayerPrefsSoundEffectsVolume, volume);
+        PlayerPrefs.Save();
     }
 
     private void TrashCounter_OnItemThrownOut(object sender, System.EventArgs e)
@@ -70,7 +93,7 @@ public class SoundManager : MonoBehaviour
 
     private void PlaySound(AudioClip[] audioClipArray, Vector3 position, float volume = 1f)
     {
-        PlaySound(audioClipArray[Random.Range(0, audioClipArray.Length)], position, volume);
+        PlaySound(audioClipArray[UnityEngine.Random.Range(0, audioClipArray.Length)], position, volume);
     }
 
     private void PlaySound(AudioClip audioClip, Vector3 position, float volumeMultiplier = 1f)
@@ -91,19 +114,6 @@ public class SoundManager : MonoBehaviour
     public void PlayCountdownSound()
     {
         PlaySound(audioClipReferencesSO.warning, Vector3.zero);
-    }
-
-    //Increase volume by 10%, reset to 0 if over 100%
-    public void ChangeVolume()
-    {
-        volume += .1f;
-        if(volume > 1f)
-        {
-            volume = 0f;
-        }
-
-        PlayerPrefs.SetFloat(PlayerPrefsSoundEffectsVolume, volume);
-        PlayerPrefs.Save();
     }
 
     public float GetVolume()

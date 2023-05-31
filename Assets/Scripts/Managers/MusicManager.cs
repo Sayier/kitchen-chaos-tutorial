@@ -7,6 +7,7 @@ public class MusicManager : MonoBehaviour
     public static MusicManager Instance { get; private set; }
 
     private const string PlayerPrefsMusicVolume = "MusicVolume";
+    public const float MusicVolumeLevelMax = 100f;
 
     private float volume;
     private AudioSource audioSource;
@@ -25,13 +26,15 @@ public class MusicManager : MonoBehaviour
         audioSource.volume = volume;
     }
 
-    public void ChangeVolume()
+    private void Start()
     {
-        volume += .1f;
-        if (volume > 1f)
-        {
-            volume = 0f;
-        }
+        OptionsUI.Instance.OnMusicSliderChanged += OptionsUI_OnMusicSliderChanged;
+    }
+
+    private void OptionsUI_OnMusicSliderChanged(object sender, OptionsUI.OnSliderChangedEventArgs e)
+    {
+        //Normalizing the volume since slider goes 0-100 but AudioSource.volume goes 0-1
+        volume = e.sliderValue/MusicVolumeLevelMax;
         audioSource.volume = volume;
 
         PlayerPrefs.SetFloat(PlayerPrefsMusicVolume, volume);

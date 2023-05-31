@@ -116,7 +116,7 @@ public class GameInput : MonoBehaviour
                 bindingText = playerInputActions.Player.InteractAlternate.bindings[0].ToDisplayString();
                 break;
             case Binding.Keyboard_Pause:
-                bindingText = playerInputActions.Player.Pause.bindings[0].ToDisplayString();
+                bindingText = playerInputActions.Player.Pause.GetBindingDisplayString(0);
                 break;
             case Binding.Gamepad_Interact:
                 bindingText = playerInputActions.Player.Interact.bindings[1].ToDisplayString();

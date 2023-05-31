@@ -25,8 +25,12 @@ public class HostDisconnectUI : MonoBehaviour
     }
 
     private void OnDestroy()
-    {
-        NetworkManager.Singleton.OnClientDisconnectCallback -= NetworkManager_OnClientDisconnectCallback;
+    {   
+        //On closing the game this was consistently throwing a NPE, check to make sure this hasn't already been destroyed
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= NetworkManager_OnClientDisconnectCallback;
+        }
     }
 
     private void NetworkManager_OnClientDisconnectCallback(ulong clientId)

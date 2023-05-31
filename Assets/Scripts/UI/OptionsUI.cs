@@ -9,9 +9,14 @@ public class OptionsUI : MonoBehaviour
 {
     public static OptionsUI Instance { get; private set; }
 
+    public event EventHandler<OnSliderChangedEventArgs> OnMusicSliderChanged;
+    public event EventHandler<OnSliderChangedEventArgs> OnSoundEffectsSliderChanged;
+    public class OnSliderChangedEventArgs : EventArgs
+    {
+        public float sliderValue;
+    }
+
     [SerializeField] private Button backButton;
-    [SerializeField] private Button soundEffectsButton;
-    [SerializeField] private Button musicButton;
     
     [SerializeField] private Button moveUpButton;
     [SerializeField] private Button moveDownButton;
@@ -25,6 +30,9 @@ public class OptionsUI : MonoBehaviour
     [SerializeField] private Button gamepadPauseButton;
 
     [SerializeField] private Transform PressToRebindKeyTransform;
+
+    [SerializeField] private Slider soundEffectsVolumeSlider;
+    [SerializeField] private Slider musicVolumeSlider;
 
     private TextMeshProUGUI soundEffectsText;
     private TextMeshProUGUI musicText;
@@ -50,8 +58,8 @@ public class OptionsUI : MonoBehaviour
         }
         Instance = this;
 
-        soundEffectsText = soundEffectsButton.GetComponentInChildren<TextMeshProUGUI>();
-        musicText = musicButton.GetComponentInChildren<TextMeshProUGUI>();
+        soundEffectsText = soundEffectsVolumeSlider.GetComponentInChildren<TextMeshProUGUI>();
+        musicText = musicVolumeSlider.GetComponentInChildren<TextMeshProUGUI>();
 
         moveUpButtonText = moveUpButton.GetComponentInChildren<TextMeshProUGUI>();
         moveDownButtonText = moveDownButton.GetComponentInChildren<TextMeshProUGUI>();
@@ -63,18 +71,6 @@ public class OptionsUI : MonoBehaviour
         gamepadInteractButtonText = gamepadInteractButton.GetComponentInChildren<TextMeshProUGUI>();
         gamepadInteractAlternateButtonText = gamepadInteractAlternateButton.GetComponentInChildren<TextMeshProUGUI>();
         gamepadPauseButtonText = gamepadPauseButton.GetComponentInChildren<TextMeshProUGUI>();
-
-        soundEffectsButton.onClick.AddListener(() =>
-        {
-            SoundManager.Instance.ChangeVolume();
-            UpdateVisual();
-        });
-
-        musicButton.onClick.AddListener(() => 
-        {
-            MusicManager.Instance.ChangeVolume();
-            UpdateVisual();
-        });
 
         backButton.onClick.AddListener(() => 
         { 
@@ -92,6 +88,18 @@ public class OptionsUI : MonoBehaviour
         gamepadInteractButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_Interact); });
         gamepadInteractAlternateButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_InteractAlternate); });
         gamepadPauseButton.onClick.AddListener(() => { RebindBinding(GameInput.Binding.Gamepad_Pause); });
+
+        musicVolumeSlider.onValueChanged.AddListener((float sliderValue) => 
+        {
+            UpdateMusicVolume(sliderValue);
+            UpdateVisual();
+        });
+
+        soundEffectsVolumeSlider.onValueChanged.AddListener((float sliderValue) => 
+        {
+            UpdateSoundEffectsVolume(sliderValue);
+            UpdateVisual();
+        });
     }
 
     private void Start()
@@ -121,14 +129,17 @@ public class OptionsUI : MonoBehaviour
         gameObject.SetActive(true);
 
         //Default the selected button to resume on pause
-        soundEffectsButton.Select();
+        moveUpButton.Select();
     }
 
     //Update the visual for all the options to reflect current settings
     private void UpdateVisual()
     {
-        soundEffectsText.text = "Sound Effects: " + Mathf.Round(SoundManager.Instance.GetVolume() * 10f).ToString();
-        musicText.text = "Music: " + Mathf.Round(MusicManager.Instance.GetVolume() * 10f).ToString();
+        soundEffectsText.text = "Sound Effects: " + Mathf.Round(SoundManager.Instance.GetVolume() * SoundManager.SoundEffectsVolumeLevelMax).ToString();
+        soundEffectsVolumeSlider.value = SoundManager.Instance.GetVolume() * SoundManager.SoundEffectsVolumeLevelMax;
+
+        musicText.text = "Music: " + Mathf.Round(MusicManager.Instance.GetVolume() * MusicManager.MusicVolumeLevelMax).ToString();
+        musicVolumeSlider.value = MusicManager.Instance.GetVolume() * MusicManager.MusicVolumeLevelMax;
 
         moveUpButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.MoveUp);
         moveDownButtonText.text = GameInput.Instance.GetBindingText(GameInput.Binding.MoveDown);
@@ -159,6 +170,22 @@ public class OptionsUI : MonoBehaviour
         {
             HidePressToRebindKey();
             UpdateVisual();
+        });
+    }
+
+    private void UpdateMusicVolume(float newSliderValue)
+    {
+        OnMusicSliderChanged?.Invoke(this, new OnSliderChangedEventArgs
+        {
+            sliderValue = newSliderValue
+        });
+    }
+    
+    private void UpdateSoundEffectsVolume(float newSliderValue)
+    {
+        OnSoundEffectsSliderChanged?.Invoke(this, new OnSliderChangedEventArgs
+        {
+            sliderValue = newSliderValue
         });
     }
 }
